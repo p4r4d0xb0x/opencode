@@ -13,12 +13,39 @@ import { NamedError } from "@opencode-ai/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "opencode-gitlab-auth"
 import { AnthropicAuthPlugin } from "./anthropic"
+import { SupermemoryPlugin } from "opencode-supermemory"
+import { ShellStrategyPlugin } from "./shell-strategy"
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
 
   // Built-in plugins that are directly imported (not installed from npm)
-  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin, AnthropicAuthPlugin]
+  const CORE_PLUGINS: PluginInstance[] = [
+    CodexAuthPlugin,
+    CopilotAuthPlugin,
+    GitlabAuthPlugin,
+    AnthropicAuthPlugin,
+  ]
+
+  const OPTIONAL_PLUGINS = [
+    {
+      names: ["github:p4r4d0xb0x/opencode-supermemory", "opencode-supermemory"],
+      plugin: SupermemoryPlugin,
+    },
+    {
+      names: ["opencode-shell-strategy", "github:JRedeker/opencode-shell-strategy"],
+      plugin: ShellStrategyPlugin,
+    },
+  ]
+
+  const INTERNAL_PLUGIN_PATHS = [
+    "opencode-openai-codex-auth",
+    "opencode-copilot-auth",
+    "github:p4r4d0xb0x/opencode-supermemory",
+    "opencode-supermemory",
+    "opencode-shell-strategy",
+    "github:JRedeker/opencode-shell-strategy",
+  ]
 
   const state = Instance.state(async () => {
     const client = createOpencodeClient({
@@ -44,7 +71,7 @@ export namespace Plugin {
       $: Bun.$,
     }
 
-    for (const plugin of INTERNAL_PLUGINS) {
+    for (const plugin of CORE_PLUGINS) {
       log.info("loading internal plugin", { name: plugin.name })
       const init = await plugin(input).catch((err) => {
         log.error("failed to load internal plugin", { name: plugin.name, error: err })
@@ -53,11 +80,19 @@ export namespace Plugin {
     }
 
     let plugins = config.plugin ?? []
+    const extra = OPTIONAL_PLUGINS.filter((item) => plugins.some((plugin) => item.names.some((name) => plugin.includes(name))))
+    for (const item of extra) {
+      log.info("loading internal plugin", { name: item.plugin.name })
+      const init = await item.plugin(input).catch((err) => {
+        log.error("failed to load internal plugin", { name: item.plugin.name, error: err })
+      })
+      if (init) hooks.push(init)
+    }
+
     if (plugins.length) await Config.waitForDependencies()
 
     for (let plugin of plugins) {
-      // ignore old codex plugin since it is supported first party now
-      if (plugin.includes("opencode-openai-codex-auth") || plugin.includes("opencode-copilot-auth")) continue
+      if (INTERNAL_PLUGIN_PATHS.some((x) => plugin.includes(x))) continue
       log.info("loading plugin", { path: plugin })
       if (!plugin.startsWith("file://")) {
         const lastAtIndex = plugin.lastIndexOf("@")
