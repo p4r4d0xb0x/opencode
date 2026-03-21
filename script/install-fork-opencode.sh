@@ -16,28 +16,6 @@ require() {
   exit 1
 }
 
-os_name() {
-  case "$(uname -s)" in
-    Darwin) echo "darwin" ;;
-    Linux) echo "linux" ;;
-    *)
-      echo "error: unsupported OS: $(uname -s)" >&2
-      exit 1
-      ;;
-  esac
-}
-
-cpu_name() {
-  case "$(uname -m)" in
-    arm64|aarch64) echo "arm64" ;;
-    x86_64|amd64) echo "x64" ;;
-    *)
-      echo "error: unsupported CPU: $(uname -m)" >&2
-      exit 1
-      ;;
-  esac
-}
-
 require git
 require bun
 
@@ -61,13 +39,18 @@ git -C "$ROOT_DIR" checkout "$BRANCH"
 git -C "$ROOT_DIR" pull --ff-only origin "$BRANCH"
 
 bun install --cwd "$ROOT_DIR"
-bun run --cwd "$ROOT_DIR/packages/opencode" build --single
+(cd "$ROOT_DIR" && ./packages/opencode/script/build.ts --single)
 
-target="opencode-$(os_name)-$(cpu_name)"
-src="$ROOT_DIR/packages/opencode/dist/$target/bin/opencode"
+src=""
+for path in "$ROOT_DIR"/packages/opencode/dist/opencode-*/bin/opencode; do
+  if [[ -x "$path" ]]; then
+    src="$path"
+    break
+  fi
+done
 
-if [[ ! -x "$src" ]]; then
-  echo "error: built binary not found: $src" >&2
+if [[ -z "$src" ]]; then
+  echo "error: built binary not found under packages/opencode/dist" >&2
   exit 1
 fi
 
