@@ -64,6 +64,20 @@ nix run nixpkgs#opencode           # 또는 github:anomalyco/opencode 로 최신
 > [!TIP]
 > 설치 전에 0.1.x 보다 오래된 버전을 제거하세요.
 
+### localcode 빌드 (소스에서)
+
+```bash
+git clone https://github.com/anomalyco/opencode.git
+cd opencode
+bun install
+./packages/opencode/script/build.ts --single
+
+# 빌드된 바이너리 실행
+./packages/opencode/dist/opencode-<platform>/bin/opencode --version
+```
+
+`<platform>` 은 실행 환경에 맞게 바꿔주세요. (예: `darwin-arm64`, `linux-x64`)
+
 ### 데스크톱 앱 (BETA)
 
 OpenCode 는 데스크톱 앱으로도 제공됩니다. [releases page](https://github.com/anomalyco/opencode/releases) 에서 직접 다운로드하거나 [opencode.ai/download](https://opencode.ai/download) 를 이용하세요.

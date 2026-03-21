@@ -64,6 +64,20 @@ nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev
 > [!TIP]
 > Remove versions older than 0.1.x before installing.
 
+### Build localcode (from source)
+
+```bash
+git clone https://github.com/anomalyco/opencode.git
+cd opencode
+bun install
+./packages/opencode/script/build.ts --single
+
+# Run the built binary
+./packages/opencode/dist/opencode-<platform>/bin/opencode --version
+```
+
+Replace `<platform>` with your platform (for example `darwin-arm64` or `linux-x64`).
+
 ### Desktop App (BETA)
 
 OpenCode is also available as a desktop application. Download directly from the [releases page](https://github.com/anomalyco/opencode/releases) or [opencode.ai/download](https://opencode.ai/download).
