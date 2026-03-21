@@ -12,14 +12,13 @@ import { Session } from "../session"
 import { NamedError } from "@opencode-ai/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "opencode-gitlab-auth"
+import { AnthropicAuthPlugin } from "./anthropic"
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
 
-  const BUILTIN = ["opencode-anthropic-auth@0.0.13"]
-
   // Built-in plugins that are directly imported (not installed from npm)
-  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin]
+  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin, AnthropicAuthPlugin]
 
   const state = Instance.state(async () => {
     const client = createOpencodeClient({
@@ -55,9 +54,6 @@ export namespace Plugin {
 
     let plugins = config.plugin ?? []
     if (plugins.length) await Config.waitForDependencies()
-    if (!Flag.OPENCODE_DISABLE_DEFAULT_PLUGINS) {
-      plugins = [...BUILTIN, ...plugins]
-    }
 
     for (let plugin of plugins) {
       // ignore old codex plugin since it is supported first party now
